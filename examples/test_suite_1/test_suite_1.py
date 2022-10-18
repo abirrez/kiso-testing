@@ -85,6 +85,7 @@ class MyTest1(pykiso.BasicTest):
         """
         super().setUp()
 
+    @pykiso.timeout(1)
     @pykiso.retry_test_case(max_try=5, rerun_setup=True, rerun_teardown=True)
     def test_run(self):
         """In this case the default test_run method is overridden and

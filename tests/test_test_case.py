@@ -8,14 +8,78 @@
 ##########################################################################
 
 import logging
+import sys
+import time
 import unittest
 from functools import partial
 
 import pytest
 
+import pykiso
 from pykiso import cli, retry_test_case
 from pykiso.logging_initializer import LogOptions
 from pykiso.test_coordinator import test_case
+
+
+EX_TEST_CASE_TIMEOUT = """
+import unittest
+import pykiso
+import time
+
+@pykiso.define_test_parameters(suite_id=1, case_id=0, aux_list=[])
+class FakeTestCase(pykiso.BasicTestSuiteSetup):
+
+    @pykiso.timeout(0.5)
+    def test_fake_1(self):
+        time.sleep(1)
+
+    @pykiso.timeout(1)
+    def test_fake_2(self):
+        time.sleep(0.1)
+
+
+"""
+
+@pytest.mark.usefixtures("CustomTestCaseAndSuite")
+class IntegrationTestSuite(unittest.TestCase):
+    test_suite_directory = None
+    test_case_file = None
+
+    @pytest.fixture(autouse=True)
+    def init_suite_directory(self, tmpdir):
+        """Create a folder in temporary location named fake_suite_1 and
+        add fake_suite_1.py  with EX_TEXT_CASE fake test
+        """
+        IntegrationTestSuite.test_suite_directory = tmpdir.mkdir("fake_suite_1")
+        IntegrationTestSuite.test_case_file = (
+            IntegrationTestSuite.test_suite_directory.join("fake_suite_1.py")
+        )
+        IntegrationTestSuite.test_case_file.write(EX_TEST_CASE_TIMEOUT)
+
+    def test_load_test_suite(self):
+        """Run a test suite sub class from test_suite.BasicTestSuite (see conftest.py).
+
+        Validation criteria:
+        -  sub class from test_suite.BasicTestSuit behave like unittest.TestSuite
+        -  no error are reported
+        -  1 failure is reported
+        -  failed test id is 'fake_suite.FakeTestCase.test_fake_1'
+        -  failed test str contains the error message 'function test_fake_1 timeout 0.5 seconds exceeded!'
+        """
+        self.init.prepare_default_test_suites(
+            IntegrationTestSuite.test_suite_directory, "*.py", 1
+        )
+        result = unittest.TextTestRunner().run(self.init.custom_test_suite) 
+        self.assertEqual(result.wasSuccessful(), False)
+        self.assertEqual(len(result.errors), 0)
+        self.assertEqual(len(result.failures), 1)
+        self.assertEqual(
+            result.failures[0][0].id(),
+            "fake_suite_1.FakeTestCase-1-0.test_fake_1",
+        )
+        self.assertEqual(result.failures[0][1].__contains__("function test_fake_1 timeout 0.5 seconds exceeded!"), True)
+        self.assertEqual(len(result.skipped), 2)
+        self.assertEqual(result.testsRun, 1)
 
 
 @pytest.mark.usefixtures("CustomTestCaseAndSuite")

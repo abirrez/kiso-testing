@@ -24,6 +24,8 @@ from __future__ import annotations
 
 import functools
 import logging
+from threading import Thread
+from types import MethodType
 import unittest
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
 
@@ -345,4 +347,44 @@ def retry_test_case(
 
         return func_wrapper
 
+    return decorator
+
+def timeout(timeout):
+    '''
+    use as decorator to abort test case execution 
+    and mark test case as failed if it takes 
+    longer than timeout seconds
+    '''
+    # def abort_test(test, f: MethodType, *args, **kw):
+    #     test.fail()
+    #     raise AssertionError(f'Test failed to be executed within {timeout}s')
+
+    def decorator(func):
+        @functools.wraps(func)
+        def func_wrapper(self: BasicTest) -> None:
+
+    #         main_thread = threading.current_thread()
+    #         t = Timer(timeout, abort_test, args=(self, func))
+    #         t.start()
+    #         # t.run()
+    #         return func(self)
+
+            res = [AssertionError(f'function {func.__name__} timeout {timeout} seconds exceeded!')]
+            def run_test():
+                try:
+                    res[0] = func(self)
+                except Exception as e:
+                    res[0] = e
+            t = Thread(target=run_test)
+            t.daemon = True
+            try:
+                t.start()
+                t.join(timeout)
+            except Exception as e:
+                print ('error starting thread')
+                raise e
+            if isinstance(res[0], BaseException):
+                raise res[0]
+            return res[0]
+        return func_wrapper
     return decorator

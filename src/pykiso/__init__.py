@@ -54,6 +54,7 @@ from .test_coordinator.test_case import (
     RemoteTest,
     define_test_parameters,
     retry_test_case,
+    timeout,
 )
 from .test_coordinator.test_suite import (
     BasicTestSuiteSetup,
