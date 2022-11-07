@@ -147,6 +147,13 @@ def eval_user_tags(click_context: click.Context) -> Dict[str, List[str]]:
     required=False,
     help="test filter pattern, e.g. 'test_suite_1.py' or 'test_*.py'. Or even more granularly 'test_suite_1.py::TestClass::test_name'",
 )
+@click.option(
+    "-pr",
+    "--pretty",
+    is_flag=True,
+    required=False,
+    help="activate the pretty mode if true",
+)
 @click.version_option(__version__)
 @Grabber.grab_cli_config
 @click.pass_context
@@ -160,6 +167,7 @@ def main(
     pattern: Optional[str] = None,
     failfast: bool = False,
     verbose: bool = False,
+    pretty : bool = False,
 ):
     """Embedded Integration Test Framework - CLI Entry Point.
 
@@ -180,11 +188,13 @@ def main(
     :param pattern: overwrite the pattern from the YAML file for easier test development
     :param failfast: stop the test run on the first error or failure
     :param verbose: activate logging for the whole framework
+    :param pretty: activate the pretty mode if true.
+
     """
 
     for config_file in test_configuration_file:
         # Set the logging
-        logger = initialize_logging(log_path, log_level, verbose, report_type)
+        logger = initialize_logging(log_path, log_level, verbose, report_type, pretty)
         # Get YAML configuration
         cfg_dict = parse_config(config_file)
         # Run tests
@@ -195,7 +205,7 @@ def main(
         user_tags = eval_user_tags(click_context)
 
         exit_code = test_execution.execute(
-            cfg_dict, report_type, user_tags, step_report, pattern, failfast
+            cfg_dict, report_type, user_tags, step_report, pattern, failfast, pretty
         )
         ConfigRegistry.delete_aux_con()
         for handler in logging.getLogger().handlers:

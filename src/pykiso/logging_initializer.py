@@ -27,10 +27,13 @@ from typing import List, NamedTuple, Optional
 
 from .test_setup.dynamic_loader import PACKAGE
 from .types import PathType
+import logging
+from rich.logging import RichHandler
+
 
 LogOptions = collections.namedtuple(
     "LogOptions",
-    "log_path log_level report_type verbose",
+    "log_path log_level report_type verbose, pretty",
 )
 # use to store the selected logging options
 log_options: Optional[LogOptions] = None
@@ -49,6 +52,7 @@ def initialize_logging(
     log_level: str,
     verbose: bool,
     report_type: str = None,
+    pretty: bool = False,
 ) -> logging.Logger:
     """Initialize the logging.
 
@@ -59,13 +63,14 @@ def initialize_logging(
     :param log_level: any of DEBUG, INFO, WARNING, ERROR
     :param verbose: activate internal kiso logging if True
     :param report_type: expected report type (junit, text,...)
+    :param pretty: activate the pretty mode if true.
 
     :returns: configured Logger
     """
     root_logger = logging.getLogger()
     log_format = logging.Formatter(
-        "%(asctime)s [%(levelname)s] %(module)s:%(lineno)d: %(message)s"
-    )
+                "%(asctime)s [%(levelname)s] %(module)s:%(lineno)d: %(message)s"
+        )
     levels = {
         "DEBUG": logging.DEBUG,
         "INFO": logging.INFO,
@@ -79,7 +84,7 @@ def initialize_logging(
 
     # update logging options
     global log_options
-    log_options = LogOptions(log_path, log_level, report_type, verbose)
+    log_options = LogOptions(log_path, log_level, report_type, verbose, pretty)
 
     class InternalLogsFilter(logging.Filter):
         def filter(self, record):
@@ -123,8 +128,11 @@ def initialize_logging(
     else:
         stream = sys.stderr
 
-    # for all report types add a StreamHandler
-    stream_handler = logging.StreamHandler(stream)
+    # for all report types add a StreamHandler/RichHandler
+    if pretty: 
+        stream_handler = RichHandler(show_path=False)
+    else:
+        stream_handler = logging.StreamHandler(stream)
     stream_handler.setFormatter(log_format)
     stream_handler.setLevel(levels[log_level])
     if not verbose:

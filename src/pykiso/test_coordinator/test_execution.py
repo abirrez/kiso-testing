@@ -272,6 +272,7 @@ def execute(
     step_report: Optional[Path] = None,
     pattern_inject: Optional[str] = None,
     failfast: bool = False,
+    pretty: bool = False,
 ) -> int:
     """Create test environment based on test configuration.
 
@@ -284,6 +285,7 @@ def execute(
         test_filter_pattern for all suites. Used in test development to
         run specific tests.
     :param failfast: stop the test run on the first error or failure.
+    :param pretty: activate the pretty mode if true.
 
     :return: exit code corresponding to the result of the test execution
         (tests failed, unexpected exception, ...)
@@ -314,6 +316,10 @@ def execute(
         log_file_path = get_logging_options().log_path
         # TestRunner selection: generate or not a junit report. Start the tests and publish the results
         if report_type == "junit":
+            if pretty:
+                XmlTestResult.pretty = True
+            else:
+                XmlTestResult.pretty = False
             junit_report_name = time.strftime("TEST-pykiso-%Y-%m-%d_%H-%M-%S.xml")
             project_folder = Path.cwd()
             reports_path = project_folder / "reports"
@@ -331,6 +337,10 @@ def execute(
                 )
                 result = test_runner.run(all_tests_to_run)
         else:
+            if pretty:
+                BannerTestResult.pretty = True
+            else:
+                BannerTestResult.pretty = False
             with ResultStream(log_file_path) as stream:
                 test_runner = unittest.TextTestRunner(
                     stream=stream,

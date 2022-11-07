@@ -189,3 +189,35 @@ class MyTest3(pykiso.RemoteTest):
     If setup_timeout, run_timeout and teardown_timeout are not given the
     default timeout value is 10 seconds for each.
     """
+
+@pykiso.define_test_parameters(
+    suite_id=1,
+    case_id=3,
+    aux_list=[aux1, aux3],
+    setup_timeout=5,
+    run_timeout=2,
+    teardown_timeout=3,
+    tag={"variant": ["variant3"]},
+)
+class MyTest5(pykiso.BasicTest):
+   
+    @pykiso.retry_test_case(max_try=1)
+    def setUp(self):
+      
+        super().setUp()
+
+    @pykiso.retry_test_case(max_try=1)
+    def test_run(self):
+     
+        self.assertTrue(1==2)
+ 
+
+    @pykiso.retry_test_case(max_try=1)
+    def tearDown(self):
+        """Hook method from unittest in order to execute code after the test case ran.
+        In this case the default tearDown method is overridden, allowing us to apply the
+        retry_test_case's decorator. The syntax super() access to the BasicTest and
+        we will run the default tearDown()
+        """
+        super().tearDown()
+

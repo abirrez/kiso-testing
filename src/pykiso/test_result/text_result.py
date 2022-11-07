@@ -35,6 +35,12 @@ from unittest import TextTestResult
 
 from ..test_coordinator.test_case import BasicTest
 from ..test_coordinator.test_suite import BaseTestSuite
+from rich.emoji import Emoji
+from rich.console import Console
+from rich.panel import Panel
+from rich.padding import Padding
+
+console = Console(log_path=False, log_time=False)
 
 if typing.TYPE_CHECKING:
     from ..types import PathType
@@ -105,7 +111,7 @@ class BannerTestResult(TextTestResult):
     """TextTestResult subclass showing results wrapped in banners."""
 
     BANNER_CHAR_WIDTH = 4
-
+    
     def __init__(self, stream: TextIO, descriptions: bool, verbosity: int):
         """Constructor. Initialize TextTestResult and the banner's width.
 
@@ -128,7 +134,7 @@ class BannerTestResult(TextTestResult):
         self.successes: List[Union[BasicTest, BaseTestSuite]] = []
 
     def _banner(
-        self, text: Union[List, str], width: Optional[int] = None, sym: str = "#"
+        self, text: Union[List, str], width: Optional[int] = None, sym: str=""
     ) -> str:
         """Format text as a banner.
 
@@ -141,6 +147,10 @@ class BannerTestResult(TextTestResult):
 
         :return: the text enclosed in a banner
         """
+        if self.pretty:
+            sym=u"\u058F"
+        else:
+            sym="#"
         width = width or self.width
         bar = sym * width
         if isinstance(text, str):
@@ -175,7 +185,10 @@ class BannerTestResult(TextTestResult):
         """
         super().startTest(test)
         self._error_occurred = False
-        top_str = "RUNNING TEST: "
+        if self.pretty:
+            top_str = "[blue]RUNNING TEST:[/] "
+        else:
+            top_str = "RUNNING TEST: "
         module_name = test.__module__
         test_name = str(test)
         addendum = ""
@@ -185,9 +198,11 @@ class BannerTestResult(TextTestResult):
         else:
             addendum += f"\nmodule: {module_name}"
         top_str += f"{test_name}{addendum}{doc}"
-        top_banner = self._banner(top_str)
-        self.stream.write(top_banner)
-        self.stream.flush()
+        if self.pretty:
+            console.log(Panel(top_str), emoji=True)
+        else:
+            top_banner = self._banner(top_str)
+            print(top_banner)
         test.start_time = time.time()
 
     def stopTest(self, test: Union[BasicTest, BaseTestSuite]) -> None:
@@ -197,16 +212,25 @@ class BannerTestResult(TextTestResult):
         """
         test.stop_time = time.time()
         test.elapsed_time = test.stop_time - test.start_time
-        result = "FAILED" if self._error_occurred else "PASSED"
-        bot_str = f"END OF TEST: {test}"
-        result_str = f"  ->  {result} in {test.elapsed_time:.3f}s"
-        if len(bot_str + result_str) < self.width - self.BANNER_CHAR_WIDTH:
-            bot_str += result_str
+        if self.pretty:
+            result = "[bold red]FAILED[/]" if self._error_occurred else  "[bold green]PASSED[/]"
+            if "PASSED" in result:
+                result_str = f"  ->  {result} in [green]{test.elapsed_time:.3f}s [/]"
+            else:
+                result_str = f"  ->  {result} in [red]{test.elapsed_time:.3f}s [/]"
+            bot_str = f"[blue]END OF TEST:[/] {test}"
         else:
-            bot_str += "\n" + result_str
-        bot_banner = self._banner(bot_str) + "\n"
-        self.stream.write(bot_banner)
-        self.stream.flush()
+            result = "FAILED " if self._error_occurred else "PASSED"
+            result_str = f"  ->  {result} in {test.elapsed_time:.3f}s"
+            bot_str = f"END OF TEST: {test}"
+        if len(bot_str + result_str) < self.width - self.BANNER_CHAR_WIDTH:
+            bot_str += result_str 
+        else:
+            bot_str += "\n" + result_str 
+        if self.pretty:
+            console.log(Panel(bot_str), emoji=True)
+        else:
+            print(bot_str)
         super().stopTest(test)
 
     def addFailure(
@@ -254,7 +278,13 @@ class BannerTestResult(TextTestResult):
         :param errors: list of failed tests with their error message
         """
         for test, err in errors:
-            self.stream.writeln(self.separator1)
-            self.stream.writeln("%s" % test)
-            self.stream.writeln("%s" % self.getDescription(test))
-            self.stream.writeln("%s: %s" % (flavour, err))
+            if self.pretty:
+                console.print(Padding("[bold white]%s [/]" % test, style="on red"))
+                console.print("%s" % self.getDescription(test))
+                console.print("[bold red]%s: [/]%s" % (flavour, err))
+
+            else:
+                self.stream.writeln(self.separator1)
+                self.stream.writeln("%s" % test)
+                self.stream.writeln("%s" % self.getDescription(test))
+                self.stream.writeln("%s: %s" % (flavour, err))
