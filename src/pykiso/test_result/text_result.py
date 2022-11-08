@@ -260,6 +260,7 @@ class BannerTestResult(TextTestResult):
         test: Union[BasicTest, BaseTestSuite],
         err: Tuple[Type[BaseException], BaseException, TracebackType],
     ) -> None:
+    
         """Set the error flag when an error occurs in order to get the
         individual test case result.
 
