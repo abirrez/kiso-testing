@@ -196,3 +196,76 @@ In user's script simply call the related auxilairy start method:
 .. literalinclude:: ../../examples/templates/suite_proxy/test_proxy.py
     :language: python
     :lines: 40-46
+
+Sharing a communication channel between multiple auxiliaries
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It is possible to share a communication channel between multiple auxiliaries with no need to
+manually configurate a proxy-aux setup.
+
+This means, from user point of view, there is no need to spend time writing complicated YAML 
+files. User can simply create a file as below:
+
+.. code:: yaml
+
+  auxiliaries:
+  aux1:
+    connectors:
+        com: chan1
+    config: null
+    type: pykiso.lib.auxiliaries.dut_auxiliary:DUTAuxiliary
+  aux2:
+    connectors:
+        com: chan2
+    type: pykiso.lib.auxiliaries.dut_auxiliary:DUTAuxiliary
+  aux3:
+    connectors:
+        com: chan1
+    type: pykiso.lib.auxiliaries.communication_auxiliary:CommunicationAuxiliary
+ 
+  connectors:
+    chan1:
+      config: null
+      type: ext_lib/cc_example.py:CCExample
+    chan2:
+      config: null
+      type: ext_lib/cc_example.py:CCExample
+      
+In order to achieve that, a code was added to take this file as input, converts it into a
+dictionary, browses it, creates a proxy-aux setup and then turns it into a YAML file that
+respectes the proxy-aux template:
+
+.. code:: yaml
+
+ auxiliaries:
+  proxy_aux:
+    connectors:
+      com: chan1
+    config:
+      aux_list: [aux1, aux3]
+    type: pykiso.lib.auxiliaries.proxy_auxiliary:ProxyAuxiliary
+  aux1:
+    connectors:
+        com: cc_proxy_aux1
+    config: null
+    type: pykiso.lib.auxiliaries.dut_auxiliary:DUTAuxiliary
+  aux2:
+    connectors:
+        com: chan2
+    type: pykiso.lib.auxiliaries.dut_auxiliary:DUTAuxiliary
+  aux3:
+    connectors:
+        com: cc_proxy_aux2
+    type: pykiso.lib.auxiliaries.dut_auxiliary:DUTAuxiliary
+  connectors:
+    chan1:
+      config: null
+      type: ext_lib/cc_example.py:CCExample
+    cc_proxy_aux1:
+      config: null
+      type: pykiso.lib.connectors.cc_proxy:CCProxy
+    cc_proxy_aux2:
+      config: null
+      type: pykiso.lib.connectors.cc_proxy:CCProxy
+    chan2:
+      type: ext_lib/cc_example.py:CCExample

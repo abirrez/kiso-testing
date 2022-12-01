@@ -11,10 +11,14 @@
 Define some recurring typing definitions
 """
 
+from __future__ import annotations
+
 import pathlib
 import typing
+from typing import Dict, Union
 
 from . import message
 
-PathType = typing.Union[str, pathlib.Path]
-MsgType = typing.Union[message.Message, bytes, str]
+PathType = Union[str, pathlib.Path]
+MsgType = Union[message.Message, bytes, str]
+ProxyReturn = Dict[str, Union[bytes, int, message.Message, None]]

@@ -21,6 +21,27 @@ from pykiso.test_coordinator import test_execution
 from pykiso.test_setup.config_registry import ConfigRegistry
 
 
+@pytest.mark.parametrize("tmp_test_without_proxy_aux", [("aux1", "aux2", False)], indirect=True)
+def test_config_with_same_channel_registry_and_test_execution(tmp_test_without_proxy_aux, capsys):
+    """Call execute function from test_execution using
+    configuration data coming from parse_config method
+
+    Validation criteria:
+        -  run is executed without error
+    """
+    cfg = parse_config(tmp_test_without_proxy_aux)
+    ConfigRegistry.register_aux_con(cfg)
+    exit_code = test_execution.execute(cfg, pattern_inject="*.py::MyTest*")
+    ConfigRegistry.delete_aux_con()
+
+    output = capsys.readouterr()
+    assert "FAIL" not in output.err
+    assert "RUNNING TEST: " in output.err
+    assert "END OF TEST: " in output.err
+    assert "->  PASSED" in output.err
+    assert "->  FAILED" not in output.err
+
+
 @pytest.mark.parametrize("tmp_test", [("aux1", "aux2", False)], indirect=True)
 def test_config_registry_and_test_execution(tmp_test, capsys):
     """Call execute function from test_execution using

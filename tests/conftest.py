@@ -361,6 +361,38 @@ def tmp_test(request, tmp_path, mocker):
 
     # and clean it up afterwards
     shutil.rmtree(str(tmp_base))
+    
+
+@pytest.fixture(scope="function")
+def tmp_test_without_proxy_aux(request, tmp_path, mocker):
+    # use a common tmp_path for all test modules
+    tmp_base = tmp_path.parent / "tests"
+
+    log_options = LogOptions(None, "ERROR", None, False)
+    mocker.patch(
+        "pykiso.test_coordinator.test_case.get_logging_options",
+        return_value=log_options,
+    )
+    mocker.patch(
+        "pykiso.test_coordinator.test_execution.get_logging_options",
+        return_value=log_options,
+    )
+
+    aux1, aux2, should_fail = request.param
+    ts_folder = tmp_base / f"test_suite_{aux1}_{aux2}"
+    ts_folder.mkdir(parents=True)
+    tc_file = ts_folder / f"test_{aux1}_{aux2}.py"
+    tc_content = create_test_case(aux1, aux2, should_fail)
+    tc_file.write_text(tc_content)
+
+    config_file = tmp_base / f"{aux1}_{aux2}.yaml"
+    cfg_content = create_config_without_proxy_aux(aux1, aux2, f"test_suite_{aux1}_{aux2}")
+    config_file.write_text(cfg_content)
+
+    yield config_file
+
+    # and clean it up afterwards
+    shutil.rmtree(str(tmp_base))
 
 
 def create_config(aux1, aux2, suite_dir):
@@ -389,6 +421,40 @@ connectors:
   chan3:
     config: null
     type: pykiso.lib.connectors.cc_flasher_example:FlasherExample
+test_suite_list:
+- suite_dir: """
+        + suite_dir
+        + """
+  test_filter_pattern: '*.py'
+  test_suite_id: 1
+    """
+    )
+    return cfg
+
+def create_config_without_proxy_aux(aux1, aux2, suite_dir):
+    cfg = (
+        """auxiliaries:
+  """
+        + aux1
+        + """:
+    connectors:
+        com: chan1
+    config: null
+    type: pykiso.lib.auxiliaries.dut_auxiliary:DUTAuxiliary
+  """
+        + aux2
+        + """:
+    connectors:
+        com:   chan1
+    type: pykiso.lib.auxiliaries.dut_auxiliary:DUTAuxiliary
+connectors:
+  chan1:
+    config: null
+    type: pykiso.lib.connectors.cc_example:CCExample
+  chan2:
+    config: null
+    type: pykiso.lib.connectors.cc_example:CCExample
+
 test_suite_list:
 - suite_dir: """
         + suite_dir

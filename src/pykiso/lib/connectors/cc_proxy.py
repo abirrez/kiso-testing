@@ -28,15 +28,8 @@ import queue
 import threading
 from typing import Callable, Dict, Union
 
-from pykiso import Message
-from pykiso.connector import CChannel
-
-ProxyReturn = Union[
-    Dict[str, Union[bytes, int]],
-    Dict[str, Union[bytes, None]],
-    Dict[str, Union[Message, None]],
-    Dict[str, Union[None, None]],
-]
+from pykiso import CChannel
+from pykiso.types import ProxyReturn
 
 log = logging.getLogger(__name__)
 
