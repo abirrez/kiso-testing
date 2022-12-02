@@ -156,7 +156,7 @@ class CCVectorCan(CChannel):
 
     def _cc_receive(
         self, timeout=0.0001, raw: bool = False
-    ) -> Dict[str, Union[MessageType, int]]:
+    ) -> Dict[str, Union[MessageType, int, float]]:
         """Receive a can message using configured filters.
 
         If raw parameter is set to True return received message as it is (bytes)
@@ -173,13 +173,14 @@ class CCVectorCan(CChannel):
             if received_msg is not None:
                 frame_id = received_msg.arbitration_id
                 payload = received_msg.data
+                timestamp = received_msg.timestamp
 
                 if not raw:
                     payload = Message.parse_packet(payload)
 
                 log.internal_debug(f"received CAN Message: {frame_id}, {payload}")
 
-                return {"msg": payload, "remote_id": frame_id}
+                return {"msg": payload, "remote_id": frame_id, "timestamp":timestamp}
             else:
                 return {"msg": None}
         except BaseException:

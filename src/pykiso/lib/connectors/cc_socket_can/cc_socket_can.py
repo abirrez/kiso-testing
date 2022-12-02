@@ -184,7 +184,7 @@ class CCSocketCan(CChannel):
 
     def _cc_receive(
         self, timeout: float = 0.0001, raw: bool = False
-    ) -> Dict[str, Union[MessageType, int]]:
+    ) -> Dict[str, Union[MessageType, int, float]]:
         """Receive a can message using configured filters.
 
         If raw parameter is set to True return received message as it is (bytes)
@@ -208,7 +208,7 @@ class CCSocketCan(CChannel):
                         frame_id, payload, timestamp
                     )
                 )
-                return {"msg": payload, "remote_id": frame_id}
+                return {"msg": payload, "remote_id": frame_id, "timestamp":timestamp}
             else:
                 return {"msg": None}
         except can.CanError as can_error:
