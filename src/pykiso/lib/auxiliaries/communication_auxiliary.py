@@ -180,12 +180,11 @@ class CommunicationAuxiliary(DTAuxiliaryInterface):
 
         msg = response.get("msg")
         remote_id = response.get("remote_id")
-        timestamp = response.get("timestamp")
-        timestamp_ba = bytearray(struct.pack("f", timestamp))  
+        
         # stay with the old return type to not making a breaking change
         if remote_id is not None:
-            return (msg, remote_id, timestamp_ba)
-        return (msg, timestamp_ba)
+            return (msg, remote_id)
+        return (msg)
 
     def clear_buffer(self) -> None:
         """Clear buffer from old stacked objects"""
